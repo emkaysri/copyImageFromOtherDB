@@ -106,12 +106,15 @@ namespace ImageFunctions
                         {
                             foreach (BlobItem blobItem in blobContainerClient2.GetBlobs())
                             {
+                                log.LogInformation($"found blobname: {blobItem.Name} in URI: {blobContainerClient2.Uri}");
+
                                 allblobs.Add(blobContainerClient2.Uri + "/" + blobItem.Name);
                             }
                         }
                         var singleBlobUrl = allblobs.First(s => s.Contains(blobName));
                         Stream blob = new MemoryStream();
-                        await new CloudBlockBlob(new Uri(singleBlobUrl)).DownloadToStreamAsync(blob);
+                        log.LogInformation($"trying to download from {singleBlobUrl}");
+                       await new CloudBlockBlob(new Uri(singleBlobUrl)).DownloadToStreamAsync(blob);
                         await blobContainerClient.UploadBlobAsync(blobName, blob);
                         
                     }
