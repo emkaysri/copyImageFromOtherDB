@@ -125,6 +125,8 @@ namespace ImageFunctions
                         {
                             Stream responseStream = response.GetResponseStream();
                             await blobContainerClient.UploadBlobAsync(blobName, responseStream);
+                            log.LogInformation($"download sucessful {singleBlobUrl}");
+
                         }
                     }
                     else
