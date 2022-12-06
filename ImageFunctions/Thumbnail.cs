@@ -8,10 +8,13 @@
 //   https://{ID}.ngrok.io/runtime/webhooks/EventGrid?functionName=Thumbnail
 
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage;
 using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
@@ -21,7 +24,9 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -30,6 +35,7 @@ namespace ImageFunctions
     public static class Thumbnail
     {
         private static readonly string BLOB_STORAGE_CONNECTION_STRING = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+        private static readonly string BLOB_STORAGE_CONNECTION_STRING2 = Environment.GetEnvironmentVariable("AzureWebJobsStorage2");
 
         private static string GetBlobNameFromUrl(string bloblUrl)
         {
@@ -92,17 +98,22 @@ namespace ImageFunctions
                         var blobContainerClient = blobServiceClient.GetBlobContainerClient(thumbContainerName);
                         var blobName = GetBlobNameFromUrl(createdEvent.Url);
 
-                        using (var output = new MemoryStream())
-                        using (Image<Rgba32> image = Image.Load(input))
-                        {
-                            var divisor = image.Width / thumbnailWidth;
-                            var height = Convert.ToInt32(Math.Round((decimal)(image.Height / divisor)));
+                        var thumbContainerName2 = Environment.GetEnvironmentVariable("THUMBNAIL_CONTAINER_NAME2");
+                        var blobContainerClient2 = blobServiceClient.GetBlobContainerClient(thumbContainerName2);
 
-                            image.Mutate(x => x.Resize(thumbnailWidth, height));
-                            image.Save(output, encoder);
-                            output.Position = 0;
-                            await blobContainerClient.UploadBlobAsync(blobName, output);
+                        List<string> allblobs = new List<string>();
+                        if (blobContainerClient2.Exists())
+                        {
+                            foreach (BlobItem blobItem in blobContainerClient2.GetBlobs())
+                            {
+                                allblobs.Add(blobContainerClient2.Uri + "/" + blobItem.Name);
+                            }
                         }
+                        var singleBlobUrl = allblobs.First(s => s.Contains(blobName));
+                        Stream blob = new MemoryStream();
+                        await new CloudBlockBlob(new Uri(singleBlobUrl)).DownloadToStreamAsync(blob);
+                        await blobContainerClient.UploadBlobAsync(blobName, blob);
+                        
                     }
                     else
                     {
