@@ -108,7 +108,7 @@ namespace ImageFunctions
                             {
                                 log.LogInformation($"found blobname: {blobItem.Name} in URI: {blobContainerClient2.Uri}");
 
-                                allblobs.Add(blobContainerClient2.Uri + "/" + blobItem.Name);
+                                allblobs.Add($"{blobContainerClient2.Uri}/{Guid.NewGuid()}/{blobItem.Name}");
                             }
                         }
                         log.LogInformation($"{allblobs}");
