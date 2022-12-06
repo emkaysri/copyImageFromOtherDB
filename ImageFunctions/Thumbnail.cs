@@ -111,6 +111,8 @@ namespace ImageFunctions
                                 allblobs.Add(blobContainerClient2.Uri + "/" + blobItem.Name);
                             }
                         }
+                        log.LogInformation($"trying to find blobname: {blobName}");
+
                         var singleBlobUrl = allblobs.First(s => s.Contains(blobName));
                         Stream blob = new MemoryStream();
                         log.LogInformation($"trying to download from {singleBlobUrl}");
