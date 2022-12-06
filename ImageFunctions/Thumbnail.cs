@@ -29,6 +29,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace ImageFunctions
 {
@@ -117,9 +118,14 @@ namespace ImageFunctions
                         var singleBlobUrl = allblobs.First(s => s.Contains(blobName));
                         Stream blob = new MemoryStream();
                         log.LogInformation($"trying to download from {singleBlobUrl}");
-                       await new CloudBlockBlob(new Uri(singleBlobUrl)).DownloadToStreamAsync(blob);
-                        await blobContainerClient.UploadBlobAsync(blobName, blob);
-                        
+
+                        WebRequest request = FtpWebRequest.Create(singleBlobUrl);
+
+                        using (WebResponse response = request.GetResponse())
+                        {
+                            Stream responseStream = response.GetResponseStream();
+                            await blobContainerClient.UploadBlobAsync(blobName, responseStream);
+                        }
                     }
                     else
                     {
